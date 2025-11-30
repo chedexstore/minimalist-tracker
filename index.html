@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minimalist Monthly Tracker</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            background-color: #f8f8f8;
+            color: #333;
+            line-height: 1.6;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        
+        .container {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background-color: white;
+        }
+        
+        header {
+            padding: 20px;
+            border-bottom: 1px solid #eee;
+            flex-shrink: 0;
+        }
+        
+        h1 {
+            font-weight: 300;
+            font-size: clamp(1.5rem, 5vw, 2.2rem);
+            letter-spacing: 2px;
+            margin-bottom: 12px;
+            text-align: left;
+        }
+        
+        .color-selector {
+            display: flex;
+            justify-content: flex-start;
+            align-items: center;
+            gap: 12px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .color-option {
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: clamp(16px, 3.5vw, 22px);
+            padding: 4px;
+            border-radius: 8px;
+            opacity: 0.4;
+        }
+        
+        .color-option:hover {
+            transform: scale(1.2);
+            opacity: 0.7;
+        }
+        
+        .color-option.active {
+            opacity: 0.8;
+            transform: scale(1.3);
+        }
+        
+        .tracker-content {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            padding: 0 15px 20px;
+        }
+        
+        .month-navigation {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 0;
+            flex-shrink: 0;
+        }
+        
+        .nav-section {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex: 1;
+        }
+        
+        .nav-section.left {
+            justify-content: flex-start;
+        }
+        
+        .nav-section.center {
+            justify-content: center;
+            flex: 2;
+        }
+        
+        .nav-section.right {
+            justify-content: flex-end;
+            flex: 1;
+        }
+        
+        .nav-btn {
+            background: none;
+            border: none;
+            padding: 10px 12px;
+            cursor: pointer;
+            font-size: clamp(1.5rem, 6vw, 2rem);
+            color: #555;
+            transition: all 0.2s;
+            border-radius: 0;
+            opacity: 0.7;
+            min-width: 44px;
+            min-height: 44px;
+        }
+        
+        .nav-btn:hover {
+            opacity: 1;
+            transform: scale(1.1);
+        }
+        
+        .current-month {
+            font-size: clamp(1.3rem, 4vw, 1.8rem);
+            letter-spacing: 1px;
+            color: #333;
+            text-align: center;
+        }
+        
+        .calendar-container {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            min-height: 0;
+        }
+        
+        .weekday-labels {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            text-align: center;
+            flex-shrink: 0;
+            margin-bottom: 8px;
+        }
+        
+        .weekday-label {
+            font-size: clamp(0.8rem, 3vw, 1.1rem);
+            color: #999;
+            padding: 8px 2px;
+        }
+        
+        .days-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            grid-template-rows: repeat(6, 1fr);
+            gap: 0;
+            border-top: 1px solid #ddd;
+            border-left: 1px solid #ddd;
+            flex: 1;
+            min-height: 300px;
+        }
+        
+        .day-cell {
+            position: relative;
+            border-right: 1px solid #ddd;
+            border-bottom: 1px solid #ddd;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            min-height: 40px;
+        }
+        
+        .day-cell:hover {
+            background-color: #f9f9f9;
+        }
+        
+        .day-number {
+            font-size: clamp(0.8rem, 3vw, 1.1rem);
+            color: #888;
+            position: absolute;
+            top: 4px;
+            left: 4px;
+            z-index: 2;
+            font-weight: 400;
+            pointer-events: none;
+        }
+        
+        .day-cell.active::after {
+            content: "❤";
+            position: absolute;
+            font-size: clamp(16px, 4vw, 24px);
+            opacity: 0.8;
+            z-index: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            transform: translateY(2px);
+        }
+        
+        .day-cell.empty {
+            background-color: #fafafa;
+            cursor: default;
+        }
+        
+        .day-cell.empty:hover {
+            background-color: #fafafa;
+        }
+        
+        .tracker-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 20px;
+            flex-shrink: 0;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .tracker-legend {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            font-size: clamp(0.9rem, 3vw, 1.1rem);
+            color: #666;
+        }
+        
+        .legend-heart {
+            font-size: clamp(14px, 3.5vw, 18px);
+            margin-right: 6px;
+            opacity: 0.8;
+        }
+        
+        .instructions {
+            color: #777;
+            font-size: clamp(0.8rem, 3vw, 1.1rem);
+            text-align: left;
+        }
+        
+        /* Mobile-specific optimizations */
+        @media (max-width: 768px) {
+            header {
+                padding: 15px;
+            }
+            
+            .tracker-content {
+                padding: 0 10px 15px;
+            }
+            
+            .month-navigation {
+                padding: 15px 0;
+            }
+            
+            .nav-section {
+                gap: 10px;
+            }
+            
+            .weekday-label {
+                padding: 6px 1px;
+            }
+            
+            .day-cell {
+                min-height: 35px;
+            }
+            
+            .day-number {
+                top: 3px;
+                left: 3px;
+                font-size: clamp(0.7rem, 2.5vw, 0.9rem);
+            }
+            
+            .day-cell.active::after {
+                font-size: clamp(14px, 3.5vw, 20px);
+                transform: translateY(1px);
+            }
+            
+            .tracker-footer {
+                flex-direction: column;
+                align-items: flex-start;
+                text-align: left;
+                gap: 12px;
+            }
+            
+            .color-selector {
+                gap: 8px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .month-navigation {
+                flex-wrap: wrap;
+            }
+            
+            .nav-section.center {
+                order: -1;
+                width: 100%;
+                margin-bottom: 10px;
+                flex: none;
+            }
+            
+            .nav-section.left,
+            .nav-section.right {
+                flex: 1;
+            }
+        }
+        
+        @media (max-width: 320px) {
+            .color-selector {
+                gap: 6px;
+            }
+            
+            .color-option {
+                font-size: 14px;
+            }
+            
+            .day-cell {
+                min-height: 30px;
+            }
+            
+            .day-number {
+                top: 2px;
+                left: 2px;
+            }
+            
+            .day-cell.active::after {
+                font-size: 12px;
+            }
+            
+            .nav-section {
+                gap: 8px;
+            }
+        }
+        
+        /* Landscape mode optimization */
+        @media (max-height: 500px) and (orientation: landscape) {
+            .tracker-content {
+                padding: 0 10px 10px;
+            }
+            
+            .month-navigation {
+                padding: 10px 0;
+            }
+            
+            .days-grid {
+                min-height: 200px;
+            }
+            
+            .day-cell {
+                min-height: 30px;
+            }
+            
+            .day-number {
+                top: 2px;
+                left: 2px;
+            }
+            
+            .day-cell.active::after {
+                font-size: clamp(12px, 3vw, 18px);
+            }
+        }
+        
+        /* Extra small devices */
+        @media (max-width: 360px) {
+            .day-cell.active::after {
+                font-size: clamp(12px, 3vw, 16px);
+            }
+            
+            .day-number {
+                font-size: clamp(0.6rem, 2vw, 0.8rem);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>MINIMALIST TRACKER</h1>
+            <div class="color-selector">
+                <div class="color-option active" style="color: #4CAF50;" data-color="#4CAF50">❤</div>
+                <div class="color-option" style="color: #2196F3;" data-color="#2196F3">❤</div>
+                <div class="color-option" style="color: #9C27B0;" data-color="#9C27B0">❤</div>
+                <div class="color-option" style="color: #FF9800;" data-color="#FF9800">❤</div>
+                <div class="color-option" style="color: #F44336;" data-color="#F44336">❤</div>
+                <div class="color-option" style="color: #795548;" data-color="#795548">❤</div>
+                <div class="color-option" style="color: #607D8B;" data-color="#607D8B">❤</div>
+            </div>
+        </header>
+        
+        <div class="tracker-content">
+            <div class="month-navigation">
+                <div class="nav-section left">
+                    <button class="nav-btn" id="prev-month">&lt;</button>
+                </div>
+                <div class="nav-section center">
+                    <div class="current-month" id="current-month">JANUARY</div>
+                </div>
+                <div class="nav-section right">
+                    <button class="nav-btn" id="next-month">&gt;</button>
+                </div>
+            </div>
+            
+            <div class="calendar-container">
+                <div class="weekday-labels">
+                    <div class="weekday-label">SUN</div>
+                    <div class="weekday-label">MON</div>
+                    <div class="weekday-label">TUE</div>
+                    <div class="weekday-label">WED</div>
+                    <div class="weekday-label">THU</div>
+                    <div class="weekday-label">FRI</div>
+                    <div class="weekday-label">SAT</div>
+                </div>
+                
+                <div class="days-grid" id="days-grid">
+                    <!-- Days will be generated by JavaScript -->
+                </div>
+            </div>
+            
+            <div class="tracker-footer">
+                <div class="tracker-legend">
+                    <div class="legend-item">
+                        <div class="legend-heart" id="legend-heart">❤</div>
+                        <span>Completed</span>
+                    </div>
+                </div>
+                <div class="instructions">
+                    Click on days to mark them. Click again to unmark.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const months = [
+            "JANUARY", "FEBRUARY", "MARCH", "APRIL", 
+            "MAY", "JUNE", "JULY", "AUGUST", 
+            "SEPTEMBER", "OCTOBER", "NOVEMBER", "DECEMBER"
+        ];
+        
+        // Set current date
+        const currentDate = new Date();
+        let currentYear = currentDate.getFullYear();
+        let currentMonth = currentDate.getMonth();
+        let heartColor = "#4CAF50"; // Default green color
+        
+        const currentMonthElement = document.getElementById('current-month');
+        const daysGrid = document.getElementById('days-grid');
+        const prevMonthBtn = document.getElementById('prev-month');
+        const nextMonthBtn = document.getElementById('next-month');
+        const legendHeart = document.getElementById('legend-heart');
+        const colorOptions = document.querySelectorAll('.color-option');
+        
+        // Initialize the tracker
+        function initTracker() {
+            updateMonthDisplay();
+            generateCalendar();
+            
+            // Load saved data from localStorage
+            loadSavedData();
+            loadHeartColor();
+            
+            // Add keyboard navigation
+            document.addEventListener('keydown', handleKeyNavigation);
+            
+            // Set up color selector
+            setupColorSelector();
+            
+            // Apply initial heart color
+            updateHeartColor();
+            
+            // Handle window resize
+            window.addEventListener('resize', handleResize);
+        }
+        
+        // Handle window resize for better mobile experience
+        function handleResize() {
+            // Re-generate calendar to ensure proper sizing
+            generateCalendar();
+        }
+        
+        // Set up color selector functionality
+        function setupColorSelector() {
+            colorOptions.forEach(option => {
+                option.addEventListener('click', function() {
+                    // Remove active class from all options
+                    colorOptions.forEach(opt => opt.classList.remove('active'));
+                    
+                    // Add active class to clicked option
+                    this.classList.add('active');
+                    
+                    // Update heart color
+                    heartColor = this.dataset.color;
+                    updateHeartColor();
+                    
+                    // Save color preference
+                    localStorage.setItem('tracker-heart-color', heartColor);
+                });
+                
+                // Add touch feedback for mobile
+                option.addEventListener('touchstart', function() {
+                    this.style.transform = 'scale(1.1)';
+                });
+                
+                option.addEventListener('touchend', function() {
+                    this.style.transform = '';
+                });
+            });
+        }
+        
+        // Update heart color throughout the tracker
+        function updateHeartColor() {
+            // Update all active hearts
+            const activeHearts = document.querySelectorAll('.day-cell.active');
+            activeHearts.forEach(heart => {
+                heart.style.color = heartColor;
+            });
+            
+            // Update legend heart
+            legendHeart.style.color = heartColor;
+            
+            // Update the ::after pseudo-element for all active hearts
+            // We need to re-apply the style
+            const style = document.createElement('style');
+            style.innerHTML = `
+                .day-cell.active::after {
+                    color: ${heartColor} !important;
+                }
+            `;
+            document.head.appendChild(style);
+        }
+        
+        // Update the month display
+        function updateMonthDisplay() {
+            currentMonthElement.textContent = `${months[currentMonth]} ${currentYear}`;
+        }
+        
+        // Generate calendar for current month
+        function generateCalendar() {
+            daysGrid.innerHTML = '';
+            
+            // Calculate first day of the month (0 = Sunday, 1 = Monday, etc.)
+            const firstDay = new Date(currentYear, currentMonth, 1).getDay();
+            
+            // Add empty cells for days before the first day of the month
+            for (let i = 0; i < firstDay; i++) {
+                const emptyCell = document.createElement('div');
+                emptyCell.className = 'day-cell empty';
+                daysGrid.appendChild(emptyCell);
+            }
+            
+            // Calculate days in month
+            const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+            
+            // Add cells for each day of the month
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dayCell = document.createElement('div');
+                dayCell.className = 'day-cell';
+                dayCell.dataset.day = day;
+                dayCell.dataset.month = currentMonth;
+                dayCell.dataset.year = currentYear;
+                
+                const dayNumber = document.createElement('div');
+                dayNumber.className = 'day-number';
+                dayNumber.textContent = day;
+                dayCell.appendChild(dayNumber);
+                
+                // Add touch events for better mobile interaction
+                dayCell.addEventListener('click', handleDayClick);
+                dayCell.addEventListener('touchstart', function(e) {
+                    e.preventDefault(); // Prevent scrolling when tapping
+                    handleDayClick.call(this);
+                });
+                
+                daysGrid.appendChild(dayCell);
+            }
+            
+            // Fill remaining cells if needed (to maintain 6 rows)
+            const totalCells = firstDay + daysInMonth;
+            const remainingCells = 42 - totalCells; // 6 rows * 7 days = 42 cells
+            
+            for (let i = 0; i < remainingCells; i++) {
+                const emptyCell = document.createElement('div');
+                emptyCell.className = 'day-cell empty';
+                daysGrid.appendChild(emptyCell);
+            }
+            
+            // Apply heart color to any pre-existing active days
+            updateHeartColor();
+            
+            // Update month display
+            updateMonthDisplay();
+        }
+        
+        // Handle day click/tap
+        function handleDayClick() {
+            this.classList.toggle('active');
+            
+            // Apply current heart color immediately
+            if (this.classList.contains('active')) {
+                this.style.color = heartColor;
+            }
+            
+            const day = this.dataset.day;
+            const month = this.dataset.month;
+            const year = this.dataset.year;
+            saveDayState(year, month, day, this.classList.contains('active'));
+        }
+        
+        // Save day state to localStorage
+        function saveDayState(year, month, day, isActive) {
+            const key = `tracker-${year}-${month}-${day}`;
+            if (isActive) {
+                localStorage.setItem(key, 'active');
+            } else {
+                localStorage.removeItem(key);
+            }
+        }
+        
+        // Load saved data from localStorage
+        function loadSavedData() {
+            const dayCells = document.querySelectorAll('.day-cell:not(.empty)');
+            
+            dayCells.forEach(cell => {
+                const day = cell.dataset.day;
+                const month = cell.dataset.month;
+                const year = cell.dataset.year;
+                const key = `tracker-${year}-${month}-${day}`;
+                
+                if (localStorage.getItem(key) === 'active') {
+                    cell.classList.add('active');
+                }
+            });
+        }
+        
+        // Load heart color from localStorage
+        function loadHeartColor() {
+            const savedColor = localStorage.getItem('tracker-heart-color');
+            if (savedColor) {
+                heartColor = savedColor;
+                
+                // Update active color option
+                colorOptions.forEach(option => {
+                    option.classList.remove('active');
+                    if (option.dataset.color === savedColor) {
+                        option.classList.add('active');
+                    }
+                });
+            }
+        }
+        
+        // Handle keyboard navigation
+        function handleKeyNavigation(e) {
+            if (e.key === 'ArrowLeft') {
+                navigateToPreviousMonth();
+            } else if (e.key === 'ArrowRight') {
+                navigateToNextMonth();
+            }
+        }
+        
+        function navigateToPreviousMonth() {
+            if (currentMonth === 0) {
+                currentMonth = 11;
+                currentYear--;
+            } else {
+                currentMonth--;
+            }
+            
+            generateCalendar();
+            loadSavedData();
+            updateHeartColor(); // Ensure color is applied to loaded days
+        }
+        
+        function navigateToNextMonth() {
+            if (currentMonth === 11) {
+                currentMonth = 0;
+                currentYear++;
+            } else {
+                currentMonth++;
+            }
+            
+            generateCalendar();
+            loadSavedData();
+            updateHeartColor(); // Ensure color is applied to loaded days
+        }
+        
+        // Event listeners for navigation
+        prevMonthBtn.addEventListener('click', navigateToPreviousMonth);
+        nextMonthBtn.addEventListener('click', navigateToNextMonth);
+        
+        // Add touch events for navigation buttons
+        [prevMonthBtn, nextMonthBtn].forEach(btn => {
+            btn.addEventListener('touchstart', function() {
+                this.style.opacity = '1';
+            });
+            
+            btn.addEventListener('touchend', function() {
+                this.style.opacity = '0.7';
+            });
+        });
+        
+        // Initialize the tracker
+        initTracker();
+    </script>
+</body>
+</html>
